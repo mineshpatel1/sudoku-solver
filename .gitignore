@@ -1,0 +1,14 @@
+data/images/raw
+~$image-inventory.xlsx
+data/datasets/mnist
+data/models/mnist
+data/models/digits
+~$run-history.xlsx
+data/models
+data/images/classified
+data/images/grid/test
+data/images/grid/train
+scratchpad.py
+data/datasets
+*.pyc
+.idea/
