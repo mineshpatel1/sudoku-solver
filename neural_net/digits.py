@@ -100,9 +100,9 @@ def deep_nn(x):
 	# Finally apply a completion layer, like in the simple example
 	w_fc2 = weight_variable([1024, 10])
 	b_fc2 = bias_variable([10])
-	y_conv = tf.matmul(h_fc1_drop, w_fc2) + b_fc2
+	y = tf.matmul(h_fc1_drop, w_fc2) + b_fc2
 
-	return y_conv, keep_prob
+	return y, keep_prob
 
 
 def test_accuracy(y, y_):
@@ -138,13 +138,13 @@ def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_tes
 		Accuracy of the model as tested on the test set of the input data.
 	"""
 
-	x, y_, y, keep_prob = digit_nn_vars()
+	x, y_label, y, keep_prob = digit_nn_vars()
 
 	# Define minimisation metric and the training algorithm (Adam optimiser this time)
-	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
+	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_label, logits=y))
 	train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
-	accuracy = test_accuracy(y, y_)
+	accuracy = test_accuracy(y, y_label)
 
 	# Creates the model directory if it doesn't already exist
 	if not os.path.exists(os.path.dirname(model_path)):
@@ -159,7 +159,6 @@ def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_tes
 			saver.restore(sess, model_path)
 			print('Loaded the model.')
 		except:
-
 			if test_only:
 				return 0
 
@@ -168,17 +167,17 @@ def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_tes
 				batch = data.train.next_batch(batch_size)
 				if i % 100 == 0:
 					# Check on training accuracy
-					train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
+					train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_label: batch[1], keep_prob: 1.0})
 					print('Step %d, training accuracy %g' % (i, train_accuracy))
 					saver.save(sess, model_path)  # Save model every 100 runs
 
 					if show_test:
-						final_accuracy = accuracy.eval(feed_dict={x: data.test.images, y_: data.test.labels, keep_prob: 1.0})
+						final_accuracy = accuracy.eval(feed_dict={x: data.test.images, y_label: data.test.labels, keep_prob: 1.0})
 						print('Test accuracy %g' % final_accuracy)
-				train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+				train_step.run(feed_dict={x: batch[0], y_label: batch[1], keep_prob: 0.5})
 
 			saver.save(sess, model_path)
-		final_accuracy = accuracy.eval(feed_dict={x: data.test.images, y_: data.test.labels, keep_prob: 1.0})
+		final_accuracy = accuracy.eval(feed_dict={x: data.test.images, y_label: data.test.labels, keep_prob: 1.0})
 		print('Test accuracy %g' % final_accuracy)
 	return final_accuracy
 
@@ -198,7 +197,7 @@ def predict_digit(test_images, model_path, flatten=True, normalise=True, probabi
 	Returns:
 		str: Classification between 0-9
 	"""
-	x, y_, y_conv, keep_prob = digit_nn_vars()
+	x, y_, y, keep_prob = digit_nn_vars()
 
 	if normalise:
 		test_images = [img / 255 for img in test_images]
@@ -220,9 +219,9 @@ def predict_digit(test_images, model_path, flatten=True, normalise=True, probabi
 			return False
 
 		if probabilities:
-			out = y_conv.eval()
+			out = y.eval()
 		else:
-			prediction = tf.argmax(y_conv, 1)
+			prediction = tf.argmax(y, 1)
 			out = prediction.eval(feed_dict={x: test_images, keep_prob: 1.0})
 	return out
 
@@ -234,12 +233,12 @@ def digit_nn_vars():
 	# y -> 10 as we have 10 classifications, 0 to 9
 	# None represents the batch size which can be any
 	x = tf.placeholder(tf.float32, shape=[None, 784])
-	y = tf.placeholder(tf.float32, shape=[None, 10])
+	y_label = tf.placeholder(tf.float32, shape=[None, 10])
 
-	y_, keep_prob = deep_nn(x)
+	y, keep_prob = deep_nn(x)
 
 	# x: Placeholder tensor of shape [N, 784] for the input data.
 	# y: Tensor of shape [N, 10] of predicted classification probabilities for the digits (see `deep_nn`).
 	# y_: Placeholder tensor of shape [N, 10] for the original classifications of the digits.
 	# keep_prob:  Probability to use during dropout (see `deep_nn`).
-	return x, y, y_, keep_prob
+	return x, y_label, y, keep_prob
