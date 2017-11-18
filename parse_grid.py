@@ -278,7 +278,7 @@ def random_train_test(num_train=50):
 
 
 def main():
-	model = DIGIT_MODEL  # None chooses the current best model
+	model = None  # None chooses the current best model
 
 	# Augmentation transformations
 	# Can play around with these and massively expand the training set
@@ -290,15 +290,12 @@ def main():
 		# iaa.PerspectiveTransform(scale=0.075, keep_size=True)
 	# ])
 
-	# auto_classify(test_only=False, dry=False)  # Standard extraction
+	# auto_classify(train_only=True, dry=False)  # Standard extraction
 	# auto_classify(train_only=True, imgaug_seq=seq, dry=False)  # Manipulation using imgaug
 	# auto_classify(train_only=True, aug_fn=augment_fns.contrast, dry=False)  # Custom manipulation
 
 	results = test_board_recognition(True)
 	# save_failed_digits(results, model))
-
-	# x = parse_grid(0, model)
-	# print(x.board)
 
 
 if __name__ == '__main__':

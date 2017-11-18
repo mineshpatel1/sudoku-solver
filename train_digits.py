@@ -89,7 +89,7 @@ def create_multiple_sets(set_names, combined_name):
 def main():
 	# create_from_train_test()
 	digits = load_data(DATA_FILE)
-	# nn.train(digits, MODEL, test_only=False, steps=20000, batch_size=50)
+	nn.train(digits, MODEL, test_only=False, steps=20000, batch_size=50)
 
 
 if __name__ == '__main__':
