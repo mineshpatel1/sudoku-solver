@@ -1,25 +1,31 @@
 import os
 import cv2
 import time
+import pickle
 import numpy as np
 from shutil import copyfile
-from imgaug import augmenters as iaa
 
 import solver
-import computer_vision.augment as augment_fns
 import computer_vision.helper as cv
+import neural_net.digits as nn
+from neural_net.Dataset import Dataset
 from Sudoku import classification_mode
 from Sudoku import Sudoku
 
+# Static variables, mostly file locations
+DIGITS = '0123456789'
 IMAGE_DIR = os.path.join('data', 'images')
 STAGE_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'stage'))
 CLASSIFIED_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'classified', classification_mode()))
+CL_TRAIN_DIR = os.path.join(CLASSIFIED_DIR, 'train')
+CL_TEST_DIR = os.path.join(CLASSIFIED_DIR, 'test')
 DIGITS_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'raw', 'digits'))
 GRID_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'grid', 'all'))
 TRAIN_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'grid', 'train'))
 TEST_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'grid', 'test'))
+DATA_DIR = os.path.abspath(os.path.join('data', 'datasets'))
+DATA_FILE = os.path.join(DATA_DIR, classification_mode())
 DIGIT_MODEL = os.path.join('data', 'models', classification_mode(), 'model.ckpt')
-BEST_MODEL = os.path.join('data', 'best-model', 'model.ckpt')
 
 
 def mkdir(dir_):
@@ -83,7 +89,7 @@ def auto_classify(train_only=False, test_only=False, imgaug_seq=None, aug_fn=Non
 		for i, f in enumerate(files):
 			print('Classifying %s...' % i)
 			original = [v.replace('.', '0') for k, v in read_original_board(i, src).items()]
-			grid = Sudoku(os.path.join(src, f), include_gray_channel=True)
+			grid = Sudoku(os.path.join(src, f), include_gray_channel=True, skip_recog=True)
 
 			# Ignore completely blank images, not required in the training set
 			digits_idx = [(j, digit) for j, digit in enumerate(grid.digits) if not np.array_equal(digit, blank)]
@@ -174,7 +180,7 @@ def test_board_recognition(all_grids=True, model=None):
 	results = []
 
 	def get_files(dir_path):
-		return sorted([f for f in os.listdir(dir_path) if f.split('.')[1] == 'jpg'], key=lambda f: int(f.split('.')[0]))
+		return sorted([fn for fn in os.listdir(dir_path) if fn.split('.')[1] == 'jpg'], key=lambda fn: int(fn.split('.')[0]))
 
 	if all_grids:
 		img_dir = GRID_DIR
@@ -242,12 +248,14 @@ def save_failed_digits(results, model=None):
 			print('\nBoard %s:' % result['id'])
 			print('\t\tGuess\tActual')
 			for guess in result['diff']['guess']:
-				print('%s\t\t%s\t\t%s' % (guess, example.board_int[solver.coord_to_idx(guess)], original[solver.coord_to_idx(guess)]))
+				print('%s\t\t%s\t\t%s' %
+				      (guess, example.board_int[solver.coord_to_idx(guess)], original[solver.coord_to_idx(guess)]))
 				bad_digits.append(example.digits[solver.coord_to_idx(guess)])
 			cv2.imwrite(os.path.join(failed_dir, ('%s.jpg' % result['id'])), np.concatenate(np.array(bad_digits), axis=1))
 
 
 def check_for_duplicates(ids):
+	"""Checks `.dat` files in the image archive for duplicate boards."""
 	boards = {}
 	for unique_id, i in enumerate(ids):
 		b = read_original_board(i, as_string=True)
@@ -260,7 +268,7 @@ def check_for_duplicates(ids):
 	print(boards)
 
 
-def random_train_test(num_train=50):
+def random_train_test(num_train=80):
 	grids = [f.split('.')[0] for f in os.listdir(GRID_DIR) if f.split('.')[1] == 'dat' and not f.startswith('.')]
 	rand = np.random.permutation(len(grids))
 	train_idx, test_idx = rand[:num_train], rand[num_train:]
@@ -277,26 +285,78 @@ def random_train_test(num_train=50):
 	copy_subset(test_idx, TEST_DIR)
 
 
-def main():
-	model = None  # None chooses the current best model
-
-	# Augmentation transformations
-	# Can play around with these and massively expand the training set
-	# seq = iaa.Sequential([
-		# iaa.Crop(px=(2, 5)),  # Crop images from each side by 0 to 4px (randomly directions)
-		# iaa.Pad(px=(0, 4)),  # Pad images for each side by 0 to 4px (random directions)
-		# iaa.GaussianBlur(sigma=0.5),  # Gaussian blur with a kernel of size sigma
-		# iaa.Dropout(p=0.2),  # Adds randomised pixel dropout
-		# iaa.PerspectiveTransform(scale=0.075, keep_size=True)
-	# ])
-
-	# auto_classify(train_only=True, dry=False)  # Standard extraction
-	# auto_classify(train_only=True, imgaug_seq=seq, dry=False)  # Manipulation using imgaug
-	# auto_classify(train_only=True, aug_fn=augment_fns.contrast, dry=False)  # Custom manipulation
-
-	results = test_board_recognition(True)
-	# save_failed_digits(results, model))
+def save_data(data, file_name):
+	"""Saves Python object to disk."""
+	with open(file_name, 'wb') as f:
+		pickle.dump(data, f)
 
 
-if __name__ == '__main__':
-	main()
+def load_data(file_name):
+	"""Loads Python object from disk."""
+	with open(file_name, 'rb') as f:
+		data = pickle.load(f)
+	return data
+
+
+def img_labs_from_dir(dir_path):
+	"""Gets image paths and labels from the classified image files in a directory."""
+	images, labels = [], []
+	for digit in DIGITS:
+		digit_dir = os.path.join(dir_path, digit)
+		files = os.listdir(digit_dir)
+		files = list(filter(lambda x: not x.startswith('.'), files))
+		files = sorted(files, key=lambda x: int(x.split('.')[0]))
+
+		for file in files:
+			images.append(os.path.join(digit_dir, file))
+			labels.append(int(digit))
+	return images, labels
+
+
+def create_digit_set(set_name=None, save=True):
+	"""
+	Creates a dataset with all of the data of classified digits from all the images collected, split into training and
+	test and ready for use with Tensorflow. Also saves the file to disk so that the same training/test split can be used
+	fairly.
+	"""
+
+	img_dir = CLASSIFIED_DIR
+	if set_name is not None:
+		img_dir = os.path.abspath(os.path.join('data', 'images', 'classified', set_name))
+
+	# Load in path names from the classified digits folders
+	images, labels = img_labs_from_dir(img_dir)
+
+	if save:
+		ds = Dataset(images, labels, from_path=True)
+		save_data(ds, DATA_FILE)
+	else:
+		return images, labels
+
+
+def create_from_train_test(save=True):
+	"""Creates a dataset from already divided test and training images."""
+	train_images, train_labels = img_labs_from_dir(CL_TRAIN_DIR)
+	test_images, test_labels = img_labs_from_dir(CL_TEST_DIR)
+
+	if save:
+		ds = Dataset((train_images, test_images), (train_labels, test_labels), from_path=True, split=False)
+		save_data(ds, DATA_FILE)
+	else:
+		return train_images, train_labels, test_images, test_labels
+
+
+def create_multiple_sets(set_names, combined_name):
+	all_images, all_labels = [], []
+	for set_ in set_names:
+		imgs, labels = create_digit_set(set_name=set_, save=False)
+		all_images += imgs
+		all_labels += labels
+	ds = Dataset(all_images, all_labels, from_path=True)
+	save_data(ds, os.path.join(DATA_DIR, combined_name))
+
+
+def train():
+	"""Begins training regime for the given classification mode, using the training and test data from `DATA_FILE`."""
+	digits = load_data(DATA_FILE)
+	nn.train(digits, DIGIT_MODEL, test_only=False, steps=20000, batch_size=50)

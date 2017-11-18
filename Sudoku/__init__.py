@@ -446,7 +446,7 @@ def extract_digit(img, rect, size, mode, include_gray_channel=False):
 
 
 class Sudoku:
-	def __init__(self, img_path, model_path=None, scale=1000, digit_size=28, include_gray_channel=False):
+	def __init__(self, img_path, model_path=None, scale=1000, digit_size=28, include_gray_channel=False, skip_recog=False):
 		"""
 		Initialises a Sudoku Grid object from a photograph of a Sudoku board.
 
@@ -460,6 +460,7 @@ class Sudoku:
 			include_gray_channel (bool): Includes the grayscale channel when extracting digits, so the shape is:
 				(digit_size, digit_size, 1) instead of (digit_size, digit_size). Useful when creating augmentations with
 				the `imgaug` package.
+			skip_recog (bool): Skips digit recognition.
 		"""
 		self.img_path = img_path
 		self.scale = scale
@@ -495,38 +496,40 @@ class Sudoku:
 		self.digits = self.get_digits(include_blanks=True)
 
 		self.board_int = [0] * 81
-		digit_recogniser = DigitRecogniser(model_path)
-		self.board_int = digit_recogniser.predict_digit(self.digits)
 
-		# If the board is invalid, use the next most likely digit prediction for the contradictory digit
-		if not solver.validate_input(self.board) and 'basic' not in self.classification_mode:
-			contradictions = solver.validate_input(self.board, True)
+		if not skip_recog:
+			digit_recogniser = DigitRecogniser(model_path)
+			self.board_int = digit_recogniser.predict_digit(self.digits)
 
-			# Record the depth for each cell as we will adjust in a loop until the board is valid
-			# We can use this to choose a different number if it needs to be checked multiple times
-			# Without this we might reach a situation where the algorithm will loop indefinitely
-			cell_depths = {}
-			while contradictions is not True:  # Loop until the board is valid
-				for cont in contradictions:
-					indices = [solver.coord_to_idx(k) for k, v in cont.items()]
-					questionable_digits = [x for i, x in enumerate(self.digits) if i in indices]
-					predictions = digit_recogniser.predict_digit(questionable_digits, weights=True)
+			# If the board is invalid, use the next most likely digit prediction for the contradictory digit
+			if not solver.validate_input(self.board) and 'basic' not in self.classification_mode:
+				contradictions = solver.validate_input(self.board, True)
 
-					least_certain_idx = -1
-					new_prediction = -1
-					certainty = None
-					for i, prediction in enumerate(predictions):
-						cell_depths[indices[i]] = cell_depths.get(indices[i], -1) + 1
-						rank = sorted(enumerate(prediction), key=lambda x: x[1], reverse=True)
-						curr_certainty = rank[0 + cell_depths[indices[i]]][1] - rank[1 + cell_depths[indices[i]]][1]
+				# Record the depth for each cell as we will adjust in a loop until the board is valid
+				# We can use this to choose a different number if it needs to be checked multiple times
+				# Without this we might reach a situation where the algorithm will loop indefinitely
+				cell_depths = {}
+				while contradictions is not True:  # Loop until the board is valid
+					for cont in contradictions:
+						indices = [solver.coord_to_idx(k) for k, v in cont.items()]
+						questionable_digits = [x for i, x in enumerate(self.digits) if i in indices]
+						predictions = digit_recogniser.predict_digit(questionable_digits, weights=True)
 
-						if certainty is None or curr_certainty < certainty:
-							certainty = curr_certainty
-							least_certain_idx = i
-							new_prediction = rank[1 + cell_depths[indices[i]]][0]
-					self.board_int[indices[least_certain_idx]] = new_prediction
+						least_certain_idx = -1
+						new_prediction = -1
+						certainty = None
+						for i, prediction in enumerate(predictions):
+							cell_depths[indices[i]] = cell_depths.get(indices[i], -1) + 1
+							rank = sorted(enumerate(prediction), key=lambda x: x[1], reverse=True)
+							curr_certainty = rank[0 + cell_depths[indices[i]]][1] - rank[1 + cell_depths[indices[i]]][1]
 
-				contradictions = solver.validate_input(self.board, True)  # Repeat if there are still contradictions left
+							if certainty is None or curr_certainty < certainty:
+								certainty = curr_certainty
+								least_certain_idx = i
+								new_prediction = rank[1 + cell_depths[indices[i]]][0]
+						self.board_int[indices[least_certain_idx]] = new_prediction
+
+					contradictions = solver.validate_input(self.board, True)  # Repeat if there are still contradictions left
 
 	def show_original(self):
 		cv.show_image(self.original)
