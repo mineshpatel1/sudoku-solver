@@ -91,7 +91,7 @@ The following modes can be used in conjunction with `cell` and `digit` and will 
 * `raw`: Best mode once the model is sufficiently trained.
 
 
-# Helpful Examples
+# Examples
 
 Parse an image of a Sudoku board and solve it:
 
