@@ -66,8 +66,8 @@ def auto_classify(train_only=False, test_only=False, imgaug_seq=None, aug_fn=Non
 	if imgaug_seq is not None and aug_fn is not None:
 		raise ValueError('Only one of imgaug_seq and aug_fn can be specified.')
 
-	if not os.path.exists(CLASSIFIED_DIR):
-		os.mkdir(CLASSIFIED_DIR)
+	mkdir(os.path.join(IMAGE_DIR, 'classified'))
+	mkdir(CLASSIFIED_DIR)
 
 	blank = cv.create_blank_image(28, 28, grayscale=True, include_gray_channel=True)
 
@@ -75,13 +75,11 @@ def auto_classify(train_only=False, test_only=False, imgaug_seq=None, aug_fn=Non
 		print('%s Classification' % name)
 
 		# Some housekeeping
-		if not os.path.exists(os.path.join(CLASSIFIED_DIR, name)):
-			os.mkdir(os.path.join(CLASSIFIED_DIR, name))
+		mkdir(os.path.join(CLASSIFIED_DIR, name))
 
 		for i in range(10):
 			digit_dir = os.path.join(CLASSIFIED_DIR, name, str(i))
-			if not os.path.exists(digit_dir):
-				os.mkdir(digit_dir)
+			mkdir(digit_dir)
 
 		# Sort files by their number otherwise we'll run into problems when classifying the digits
 		files = [f for f in os.listdir(src) if f.split('.')[1] == 'jpg']
@@ -269,6 +267,9 @@ def check_for_duplicates(ids):
 
 
 def random_train_test(num_train=80):
+	mkdir(TRAIN_DIR)
+	mkdir(TEST_DIR)
+
 	grids = [f.split('.')[0] for f in os.listdir(GRID_DIR) if f.split('.')[1] == 'dat' and not f.startswith('.')]
 	rand = np.random.permutation(len(grids))
 	train_idx, test_idx = rand[:num_train], rand[num_train:]
@@ -340,6 +341,8 @@ def create_from_train_test(save=True):
 	test_images, test_labels = img_labs_from_dir(CL_TEST_DIR)
 
 	if save:
+		mkdir(DATA_DIR)
+		print('Compiling training and test images to %s...' % DATA_FILE)
 		ds = Dataset((train_images, test_images), (train_labels, test_labels), from_path=True, split=False)
 		save_data(ds, DATA_FILE)
 	else:

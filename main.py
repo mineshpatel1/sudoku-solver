@@ -1,6 +1,7 @@
 import helper
 from imgaug import augmenters as iaa
 import computer_vision.augment as augment_fns
+from Sudoku import Sudoku
 
 
 def main():
@@ -16,18 +17,17 @@ def main():
 	# 	iaa.PerspectiveTransform(scale=0.075, keep_size=True)
 	# ])
 
-	# Randomly plits the total archive into a training and test. Input the number of desired training images
+	# Randomly splits the total archive into a training and test. Input the number of desired training images
 	# helper.random_train_test(80)
-	#
-	# helper.auto_classify(dry=False)  # Standard extraction
+
+	# helper.auto_classify(dry=False)  # Classifies digit images using .dat descriptors without manipulation
 	# helper.auto_classify(train_only=True, imgaug_seq=seq, dry=False)  # Manipulation using imgaug
 	# helper.auto_classify(train_only=True, aug_fn=augment_fns.contrast, dry=False)  # Custom manipulation
 
 	# helper.create_from_train_test()  # Creates a pickled data file from classified digit images for training
-	helper.train()  # Train a network based on the classification mode (config.ini)
+	# helper.train()  # Train a network based on the classification mode (config.ini)
 
-	# results = helper.test_board_recognition(True, helper.DIGIT_MODEL)
-	# save_failed_digits(results, model))
+	results = helper.test_board_recognition()
 
 
 if __name__ == '__main__':
