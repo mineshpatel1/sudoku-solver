@@ -72,7 +72,7 @@ def deep_nn(x):
 	# See here for info about ReLU: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
 	h_conv1 = tf.nn.relu(conv2d(x_image, w_conv1) + b_conv1)
 
-	# The 2x2 pool layer reduces (downsamples) the image to 14x14
+	# The 2x2 pool layer reduces (downsamples) the 28x28 pixel image to 14x14 pixels
 	h_pool1 = max_pool_2x2(h_conv1)
 
 	# Second convolutional layer - in order to build a deep network we stack several layers.
@@ -81,9 +81,9 @@ def deep_nn(x):
 	b_conv2 = bias_variable([64])
 
 	h_conv2 = tf.nn.relu(conv2d(h_pool1, w_conv2) + b_conv2)
-	h_pool2 = max_pool_2x2(h_conv2)  # Reduces to 7x7
+	h_pool2 = max_pool_2x2(h_conv2)  # Reduces image to 7x7 pixels
 
-	# Add a fully connected layer with 1025 neurons to process the entire image
+	# Add a fully connected layer with 1024 neurons to process the entire image
 	w_fc1 = weight_variable([7 * 7 * 64, 1024])
 	b_fc1 = bias_variable([1024])
 

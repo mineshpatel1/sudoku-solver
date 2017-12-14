@@ -25,7 +25,8 @@ TRAIN_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'grid', 'train'))
 TEST_DIR = os.path.abspath(os.path.join(IMAGE_DIR, 'grid', 'test'))
 DATA_DIR = os.path.abspath(os.path.join('data', 'datasets'))
 DATA_FILE = os.path.join(DATA_DIR, classification_mode())
-DIGIT_MODEL = os.path.join('data', 'models', classification_mode(), 'model.ckpt')
+MODEL_DIR = os.path.join('data', 'models', classification_mode())
+DIGIT_MODEL = os.path.join(MODEL_DIR, 'model.ckpt')
 
 
 def mkdir(dir_):
@@ -237,19 +238,25 @@ def save_failed_digits(results, model=None):
 		model = os.path.join(os.path.dirname(__file__), 'data', 'best-model', 'model.ckpt')
 
 	failed_dir = os.path.join(os.path.dirname(model), 'failed_digits')
+	compare_dir = os.path.join(os.path.dirname(model), 'comparison')
 	mkdir(failed_dir)
+	mkdir(compare_dir)
 	for result in results:
 		if result['num_diff'] > 0:
 			bad_digits = []
+			compare_digits = []
 			example = parse_grid(result['id'], model)
+			raw_digits = example.get_digits(raw=True)
 			original = read_original_board(result['id'], GRID_DIR, as_list=True)
 			print('\nBoard %s:' % result['id'])
 			print('\t\tGuess\tActual')
 			for guess in result['diff']['guess']:
 				print('%s\t\t%s\t\t%s' %
-				      (guess, example.board_int[solver.coord_to_idx(guess)], original[solver.coord_to_idx(guess)]))
+				      (guess, example.board_str[solver.coord_to_idx(guess)], original[solver.coord_to_idx(guess)]))
 				bad_digits.append(example.digits[solver.coord_to_idx(guess)])
+				compare_digits.append(raw_digits[solver.coord_to_idx(guess)])
 			cv2.imwrite(os.path.join(failed_dir, ('%s.jpg' % result['id'])), np.concatenate(np.array(bad_digits), axis=1))
+			cv2.imwrite(os.path.join(compare_dir, ('%s.jpg' % result['id'])), np.concatenate(np.array(compare_digits), axis=1))
 
 
 def check_for_duplicates(ids):
@@ -359,7 +366,15 @@ def create_multiple_sets(set_names, combined_name):
 	save_data(ds, os.path.join(DATA_DIR, combined_name))
 
 
+def training_test_sizes():
+	digits = load_data(DATA_FILE)
+	print('Size of training set: %s' % digits.train_size)
+	print('Size of test set: %s' % digits.test_size)
+
+
 def train():
 	"""Begins training regime for the given classification mode, using the training and test data from `DATA_FILE`."""
 	digits = load_data(DATA_FILE)
+	mkdir(os.path.join('data', 'models'))
+	mkdir(MODEL_DIR)
 	nn.train(digits, DIGIT_MODEL, test_only=False, steps=20000, batch_size=50)

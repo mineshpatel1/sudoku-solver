@@ -660,7 +660,7 @@ class Sudoku:
 
 		return np.array(squares)
 
-	def get_digits(self, save=None, show=False, include_blanks=False):
+	def get_digits(self, save=None, show=False, include_blanks=False, raw=False):
 		"""
 		Saves only the extracted digits from a Sudoku grid to the digits subfolder.
 
@@ -669,6 +669,7 @@ class Sudoku:
 				according to the 0 based grid position. If the directory already exists, the results will be overwritten.
 			show (bool): If True, will display each square as they are extracted.
 			include_blanks (bool): If True, will include squares where a digit could not be found as a completely black square.
+			raw (bool): If True, will extract the digits without any pre-processing.
 
 		Returns:
 			np.array: Array of all `np.array` images for each digit in the Sudoku grid.
@@ -685,7 +686,7 @@ class Sudoku:
 			self.cropped.reshape(w, h, 1)
 
 		for i, rect in enumerate(self.grid_squares):
-			if 'raw' in self.classification_mode:
+			if 'raw' in self.classification_mode or raw:
 				digit = extract_cell_raw(self.cropped, rect, self.digit_size, include_gray_channel=self.include_gray_channel)
 			else:
 				digit = extract_digit(self.cropped, rect, self.digit_size, self.classification_mode,
@@ -711,6 +712,10 @@ class Sudoku:
 	@property
 	def board_dict(self):
 		return solver.parse_sudoku_puzzle(self.board)
+
+	@property
+	def board_str(self):
+		return [str(x) if x != 0 else '.' for x in self.board_int]
 
 	@property
 	def solution(self):

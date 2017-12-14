@@ -117,6 +117,8 @@ results = helper.test_board_recognition()
 
 Randomly split the image archive into training and test sets, with 80 images chosen for the training set. From this create archives of individual digits, classified using the `.dat` files and separated into their own folders (`/data/images/classified/0-9). Finally compiles these images into a binary [pickle](https://docs.python.org/3/library/pickle.html) file that can be consumed for training. The last line trains a model using this dataset binary.
 
+> The `auto_classify` function won't overwrite files, it will just keep adding more training (or testing) data.
+
 ```python
 import helper
 
@@ -152,6 +154,7 @@ helper.create_from_train_test()  # Creates a pickled data file from classified d
 Randomly manipulate the digit images computationally using custom functions defined in `computer_vision/augment.py` and classify them using the `.dat` files.
 
 ```python
+import helper
 import computer_vision.augment as augment_fns
 
 helper.auto_classify(train_only=True, aug_fn=augment_fns.contrast, dry=False)  # Custom manipulation
