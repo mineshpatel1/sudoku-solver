@@ -12,29 +12,29 @@ MODEL = os.path.join('..', 'data', 'models', classification_mode(), 'model.ckpt'
 
 
 def load_data(file_name):
-	"""Loads Python object from disk."""
-	with open(file_name, 'rb') as f:
-		data = pickle.load(f)
-	return data
+    """Loads Python object from disk."""
+    with open(file_name, 'rb') as f:
+        data = pickle.load(f)
+    return data
 
 
 class NNTrainer(unittest.TestCase):
-	def test_training(self):
-		try:
-			digits = load_data(DATA_FILE)
-			nn.train(digits, MODEL, test_only=True, steps=100)
-			self.assertTrue(True)  # Simply testing if the training can proceed without error
-		except Exception as err:
-			self.assertRaises(err)
+    def test_training(self):
+        try:
+            digits = load_data(DATA_FILE)
+            nn.train(digits, MODEL, test_only=True, steps=100)
+            self.assertTrue(True)  # Simply testing if the training can proceed without error
+        except Exception as err:
+            self.assertRaises(err)
 
 
 def suite():
-	return unittest.TestLoader().loadTestsFromTestCase(NNTrainer)
+    return unittest.TestLoader().loadTestsFromTestCase(NNTrainer)
 
 
 def main():
-	unittest.main()
+    unittest.main()
 
 
 if __name__ == '__main__':
-	main()
+    main()
