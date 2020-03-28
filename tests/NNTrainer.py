@@ -8,7 +8,7 @@ from Sudoku import classification_mode
 
 DATA_DIR = os.path.abspath(os.path.join('..', 'data', 'datasets'))
 DATA_FILE = os.path.join(DATA_DIR, classification_mode())
-MODEL = os.path.join('..', 'data', 'models', classification_mode(), 'model.ckpt')
+MODEL = os.path.join('..', 'data', 'best-model', 'model.ckpt')
 
 
 def load_data(file_name):

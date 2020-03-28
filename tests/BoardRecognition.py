@@ -7,7 +7,7 @@ from Sudoku import Sudoku
 from Sudoku import classification_mode
 
 GRID_DIR = os.path.join('..', 'data', 'images', 'grid', 'all')
-DIGIT_MODEL = os.path.join('..', 'data', 'models', classification_mode(), 'model.ckpt')
+DIGIT_MODEL = os.path.join('..', 'data', 'best-model', 'model.ckpt')
 TOLERANCE = 0.90
 
 
@@ -21,23 +21,26 @@ class BoardRecognition(unittest.TestCase):
         for grid in grid_files:
             print('Processing %s...' % grid)
 
-            start = time.time()
-            sudoku = Sudoku(os.path.join(GRID_DIR, grid), DIGIT_MODEL)
-            total_time += time.time() - start
+            try:
+                start = time.time()
+                sudoku = Sudoku(os.path.join(GRID_DIR, grid), DIGIT_MODEL)
+                total_time += time.time() - start
 
-            with open(os.path.join(GRID_DIR, '%s.dat' % grid.split('.')[0]), 'r') as f:
-                board = solver.parse_sudoku_puzzle(f.read())
+                with open(os.path.join(GRID_DIR, '%s.dat' % grid.split('.')[0]), 'r') as f:
+                    board = solver.parse_sudoku_puzzle(f.read())
 
-            # Add up the mis-classified digits
-            diff = []
-            guess = sudoku.board_dict
-            for position in guess:
-                if guess[position] != board[position]:
-                    diff.append(position)
-            missed_digits += len(diff)
+                # Add up the mis-classified digits
+                diff = []
+                guess = sudoku.board_dict
+                for position in guess:
+                    if guess[position] != board[position]:
+                        diff.append(position)
+                missed_digits += len(diff)
 
-            if sudoku.board_dict == board:
-                successes += 1
+                if sudoku.board_dict == board:
+                    successes += 1
+            except:  # If it fails, assume we matched nothing
+                missed_digits += 81
 
         print('Success: %s\tFail: %s\tRatio: %s' % (successes, len(grid_files) - successes, successes / len(grid_files)))
         print('Elapsed: %ss\tAverage: %ss' % (total_time, total_time / len(grid_files)))

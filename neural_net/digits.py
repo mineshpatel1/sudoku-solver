@@ -54,8 +54,8 @@ def deep_nn(x):
 
     Returns:
         tuple: (y, keep_prob). y is a tensor of shape (N_examples, 10), with values equal to the logits of classifying
-        the digit into one of 10 classes (the digits 0-9). keep_prob is a scalar placeholder for the probability of
-        dropout.
+            the digit into one of 10 classes (the digits 0-9). keep_prob is a scalar placeholder for the probability of
+            dropout.
     """
 
     # First convolutional layer that will compute 32 features for each 5x5 patch.
@@ -141,6 +141,7 @@ def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_tes
     x, y_label, y, keep_prob = digit_nn_vars()
 
     # Define minimisation metric and the training algorithm (Adam optimiser this time)
+    # More on the Adam optimiser: https://arxiv.org/pdf/1412.6980v8.pdf
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_label, logits=y))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
@@ -171,6 +172,7 @@ def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_tes
                     print('Step %d, training accuracy %g' % (i, train_accuracy))
                     saver.save(sess, model_path)  # Save model every 100 runs
 
+                    # Check accuracy of the test set (unseen images)
                     if show_test:
                         final_accuracy = accuracy.eval(
                             feed_dict={x: data.test.images, y_label: data.test.labels, keep_prob: 1.0})
@@ -178,6 +180,8 @@ def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_tes
                 train_step.run(feed_dict={x: batch[0], y_label: batch[1], keep_prob: 0.5})
 
             saver.save(sess, model_path)
+
+        # Print final test accuracy
         final_accuracy = accuracy.eval(feed_dict={x: data.test.images, y_label: data.test.labels, keep_prob: 1.0})
         print('Test accuracy %g' % final_accuracy)
     return final_accuracy
@@ -198,7 +202,7 @@ def predict_digit(test_images, model_path, flatten=True, normalise=True, probabi
     Returns:
         str: Classification between 0-9
     """
-    x, y_, y, keep_prob = digit_nn_vars()
+    x, y_label, y, keep_prob = digit_nn_vars()
 
     if normalise:
         test_images = [img / 255 for img in test_images]
@@ -240,6 +244,7 @@ def digit_nn_vars():
 
     # x: Placeholder tensor of shape [N, 784] for the input data.
     # y: Tensor of shape [N, 10] of predicted classification probabilities for the digits (see `deep_nn`).
-    # y_: Placeholder tensor of shape [N, 10] for the original classifications of the digits.
+    # y_label: Placeholder tensor of shape [N, 10] for the original classifications of the digits.
     # keep_prob:  Probability to use during dropout (see `deep_nn`).
     return x, y_label, y, keep_prob
+
