@@ -276,7 +276,7 @@ def solve_puzzle(puzzle):
     """
 
     if validate_input(puzzle) is not True:
-        print('Board input is invalid and has contradictions, will not attempt to solve.')
+        # print('Board input is invalid and has contradictions, will not attempt to solve.')
         return False
 
     coords, peers, units, all_units = sudoku_elements()

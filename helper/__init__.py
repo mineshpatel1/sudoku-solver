@@ -378,3 +378,45 @@ def train(steps=1000):
     mkdir(os.path.join('data', 'models'))
     mkdir(MODEL_DIR)
     nn.train(digits, DIGIT_MODEL, test_only=False, steps=steps, batch_size=50)
+
+
+def solve_from_video(source=0, save=None):
+    """
+    Solves for frames in a video stream, either a saved video or one that is live from a camera.
+
+    Args:
+        source: (int|str): Either an index of the connected cameras or a path to a video file.
+        save (str): Optionally specify a file path to save the output to.
+    """
+
+    if save:
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(save, fourcc, 5.0, (1000, 562), True)
+
+    cap = cv2.VideoCapture(source)
+    while True:
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+
+        try:
+            puzzle = Sudoku(frame=frame, skip_validate=True)
+            img = puzzle.show_completed(show=False)
+            if img is not None:
+                frame = img
+        except Exception as err:
+            print('Error', str(err))
+            pass
+
+        # Display the resulting frame
+        frame = cv2.resize(frame, (1000, 562))
+
+        if save:
+            out.write(frame)
+
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()

@@ -446,7 +446,9 @@ def extract_digit(img, rect, size, mode, include_gray_channel=False):
 
 class Sudoku:
     def __init__(
-            self, img_path, model_path=None, scale=1000, digit_size=28, include_gray_channel=False, skip_recog=False,
+            self, img_path=None, model_path=None, scale=1000, digit_size=28,
+            include_gray_channel=False, skip_recog=False, skip_validate=False,
+            frame=None,
     ):
         """
         Initialises a Sudoku Grid object from a photograph of a Sudoku board.
@@ -462,6 +464,8 @@ class Sudoku:
                 (digit_size, digit_size, 1) instead of (digit_size, digit_size). Useful when creating augmentations with
                 the `imgaug` package.
             skip_recog (bool): Skips digit recognition.
+            skip_validate (bool): Skips the validation algorithm if the board isn't solved immediately.
+            frame(numpy.ndarray): Specify instead of img_path if you have a numpy array representation of an image.
         """
         self.img_path = img_path
         self.scale = scale
@@ -477,11 +481,21 @@ class Sudoku:
         if model_path is None:  # Default to the best model
             model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'best-model', 'model.ckpt')
 
-        if not os.path.exists(self.img_path):
-            raise FileNotFoundError(self.img_path)
+        if img_path is None and frame is None:
+            raise ValueError("One of img_path or frame must be specified.")
+
+        if img_path is not None and frame is not None:
+            raise ValueError("Only one of img_path and frame must be specified")
+
+        if img_path is not None and frame is None:
+            if not os.path.exists(self.img_path):
+                raise FileNotFoundError(self.img_path)
 
         # Read in the Sudoku photo
-        self.original = cv2.imread(self.img_path, cv2.IMREAD_COLOR)
+        if frame is not None:
+            self.original = frame
+        else:
+            self.original = frame or cv2.imread(self.img_path, cv2.IMREAD_COLOR)
 
         self.original = cv.limit_scale(self.original, scale, scale)  # Scale down the image to speed up processing
         self.grayscale = cv2.cvtColor(self.original.copy(), cv2.COLOR_BGR2GRAY)  # Grayscale
@@ -506,35 +520,36 @@ class Sudoku:
             else:
                 self.board_int = digit_recogniser.predict_digit(self.digits)
 
-            # If the board is invalid, use the next most likely digit prediction for the contradictory digit
-            if not solver.validate_input(self.board) and 'basic' not in self.classification_mode:
-                contradictions = solver.validate_input(self.board, True)
+            if not skip_validate:
+                # If the board is invalid, use the next most likely digit prediction for the contradictory digit
+                if not solver.validate_input(self.board) and 'basic' not in self.classification_mode:
+                    contradictions = solver.validate_input(self.board, True)
 
-                # Record the depth for each cell as we will adjust in a loop until the board is valid
-                # We can use this to choose a different number if it needs to be checked multiple times
-                # Without this we might reach a situation where the algorithm will loop indefinitely
-                cell_depths = {}
-                while contradictions is not True:  # Loop until the board is valid
-                    for cont in contradictions:
-                        indices = [solver.coord_to_idx(k) for k, v in cont.items()]
-                        questionable_digits = [x for i, x in enumerate(self.digits) if i in indices]
-                        predictions = digit_recogniser.predict_digit(questionable_digits, weights=True)
+                    # Record the depth for each cell as we will adjust in a loop until the board is valid
+                    # We can use this to choose a different number if it needs to be checked multiple times
+                    # Without this we might reach a situation where the algorithm will loop indefinitely
+                    cell_depths = {}
+                    while contradictions is not True:  # Loop until the board is valid
+                        for cont in contradictions:
+                            indices = [solver.coord_to_idx(k) for k, v in cont.items()]
+                            questionable_digits = [x for i, x in enumerate(self.digits) if i in indices]
+                            predictions = digit_recogniser.predict_digit(questionable_digits, weights=True)
 
-                        least_certain_idx = -1
-                        new_prediction = -1
-                        certainty = None
-                        for i, prediction in enumerate(predictions):
-                            cell_depths[indices[i]] = cell_depths.get(indices[i], -1) + 1
-                            rank = sorted(enumerate(prediction), key=lambda x: x[1], reverse=True)
-                            curr_certainty = rank[0 + cell_depths[indices[i]]][1] - rank[1 + cell_depths[indices[i]]][1]
+                            least_certain_idx = -1
+                            new_prediction = -1
+                            certainty = None
+                            for i, prediction in enumerate(predictions):
+                                cell_depths[indices[i]] = cell_depths.get(indices[i], -1) + 1
+                                rank = sorted(enumerate(prediction), key=lambda x: x[1], reverse=True)
+                                curr_certainty = rank[0 + cell_depths[indices[i]]][1] - rank[1 + cell_depths[indices[i]]][1]
 
-                            if certainty is None or curr_certainty < certainty:
-                                certainty = curr_certainty
-                                least_certain_idx = i
-                                new_prediction = rank[1 + cell_depths[indices[i]]][0]
-                        self.board_int[indices[least_certain_idx]] = new_prediction
+                                if certainty is None or curr_certainty < certainty:
+                                    certainty = curr_certainty
+                                    least_certain_idx = i
+                                    new_prediction = rank[1 + cell_depths[indices[i]]][0]
+                            self.board_int[indices[least_certain_idx]] = new_prediction
 
-                    contradictions = solver.validate_input(self.board, True)  # Repeat if there are still contradictions left
+                        contradictions = solver.validate_input(self.board, True)  # Repeat if there are still contradictions left
 
     def show_original(self):
         cv.show_image(self.original)
@@ -628,10 +643,10 @@ class Sudoku:
     def show_completed(self, colour=(50, 50, 255), thickness=3, show=True, save=None):
         """Shows the cropped image with the solution overlaid on the missing boxes."""
         if self.solution is None:  # When we know we haven't got a solution, don't continue
-            return self.show_board()
+            return None
         else:
             answers = [v for k, v in solver.parse_sudoku_puzzle(self.solution).items()]  # Solution as a list
-        return self.draw_numbers(answers, colour, thickness, show=show, save=save)
+            return self.draw_numbers(answers, colour, thickness, show=show, save=save)
 
     def get_squares(self, save=None, show=False):
         """
@@ -729,3 +744,4 @@ class Sudoku:
             return solver.display_sudoku_grid(answer)
         else:
             return None
+
