@@ -4,7 +4,6 @@ import solver
 import unittest
 
 from Sudoku import Sudoku
-from Sudoku import classification_mode
 
 GRID_DIR = os.path.join('..', 'data', 'images', 'grid', 'all')
 DIGIT_MODEL = os.path.join('..', 'data', 'best-model', 'model.ckpt')

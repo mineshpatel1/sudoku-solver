@@ -25,7 +25,7 @@ def bias_variable(shape):
     return tf.Variable(initial)
 
 
-def simple_nn():
+def digit_nn_vars():
     """
     Builds a simple neural neural network using gradient descent optimisation and backpropagation for
     classifying digits drawn in 28x28 squares. Network contains 3 layers:
@@ -64,7 +64,7 @@ def simple_nn():
 
 
 def train(data, model_path, test_only=False, steps=1000, batch_size=50, show_test=True):
-    x, y_label, y = simple_nn()
+    x, y_label, y = digit_nn_vars()
 
     # Cross entropy cost function
     # More numerically stable to perform Softmax here instead of on the previous layer

@@ -1,6 +1,5 @@
 import os
 import cv2
-import time
 import numpy as np
 
 from configparser import ConfigParser
@@ -21,7 +20,7 @@ def classification_mode():
         config.read(os.path.join(os.path.dirname(__file__), '..', 'config.ini'))
         return config['CLASSIFICATION']['Mode']
     except:
-        return 'digit-adaptive-blur'  # Current best, use as default
+        return 'raw'  # Current best, use as default
 
 
 def inner_sudoku_bbox(img, bbox):
@@ -446,7 +445,9 @@ def extract_digit(img, rect, size, mode, include_gray_channel=False):
 
 
 class Sudoku:
-    def __init__(self, img_path, model_path=None, scale=1000, digit_size=28, include_gray_channel=False, skip_recog=False):
+    def __init__(
+            self, img_path, model_path=None, scale=1000, digit_size=28, include_gray_channel=False, skip_recog=False,
+    ):
         """
         Initialises a Sudoku Grid object from a photograph of a Sudoku board.
 
@@ -499,7 +500,11 @@ class Sudoku:
 
         if not skip_recog:
             digit_recogniser = DigitRecogniser(model_path)
-            self.board_int = digit_recogniser.predict_digit(self.digits)
+
+            if 'simple' in self.classification_mode:
+                self.board_int = digit_recogniser.simple_predict_digit(self.digits)
+            else:
+                self.board_int = digit_recogniser.predict_digit(self.digits)
 
             # If the board is invalid, use the next most likely digit prediction for the contradictory digit
             if not solver.validate_input(self.board) and 'basic' not in self.classification_mode:

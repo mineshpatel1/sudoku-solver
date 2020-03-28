@@ -3,7 +3,6 @@ import pickle
 import unittest
 
 import neural_net.digits as nn
-from neural_net.Dataset import Dataset
 from Sudoku import classification_mode
 
 DATA_DIR = os.path.abspath(os.path.join('..', 'data', 'datasets'))

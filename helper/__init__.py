@@ -372,9 +372,9 @@ def training_test_sizes():
     print('Size of test set: %s' % digits.test_size)
 
 
-def train():
+def train(steps=1000):
     """Begins training regime for the given classification mode, using the training and test data from `DATA_FILE`."""
     digits = load_data(DATA_FILE)
     mkdir(os.path.join('data', 'models'))
     mkdir(MODEL_DIR)
-    nn.train(digits, DIGIT_MODEL, test_only=False, steps=20000, batch_size=50)
+    nn.train(digits, DIGIT_MODEL, test_only=False, steps=steps, batch_size=50)

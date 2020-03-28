@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 import neural_net.digits as nn
+import neural_net.digits_simple as simple_nn
 
 
 def prepare_images(test_images, normalise=True, flatten=True):
@@ -69,4 +70,38 @@ class DigitRecogniser:
             else:
                 prediction = tf.argmax(y_conv, 1)
                 out = prediction.eval(feed_dict={x: test_images, keep_prob: 1.0}, session=sess)
+        return out
+
+    def simple_predict_digit(self, test_images):
+        normalise = True
+        flatten = True
+        weights = False
+        threshold = 0
+
+        test_images = prepare_images(test_images, normalise, flatten)
+        tf.reset_default_graph()
+        x, y, y_conv = simple_nn.digit_nn_vars()
+
+        with tf.Session() as sess:
+            saver = tf.train.Saver()
+            saver.restore(sess, self.model)
+
+            if threshold != 0:
+                # Weighted likelihood of each image guess
+                weights = y_conv.eval(feed_dict={x: test_images}, session=sess)
+                guesses = np.argmax(weights, 1)  # Guesses for the digits
+
+                # Checks if the guesses are above the threshold weight
+                out = []
+                for i, guess in enumerate(guesses):
+                    if weights[i][guess] > threshold:
+                        out.append(guess)
+                    else:
+                        out.append(0)
+                out = np.array(out)
+            elif weights is True:
+                return y_conv.eval(feed_dict={x: test_images}, session=sess)
+            else:
+                prediction = tf.argmax(y_conv, 1)
+                out = prediction.eval(feed_dict={x: test_images}, session=sess)
         return out
