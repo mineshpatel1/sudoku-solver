@@ -479,7 +479,7 @@ class Sudoku:
             self.border = 15
 
         if model_path is None:  # Default to the best model
-            model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'best-model', 'model.ckpt')
+            model_path = os.path.join(os.path.dirname(__file__), 'data', 'best-model', 'model.ckpt')
 
         if img_path is None and frame is None:
             raise ValueError("One of img_path or frame must be specified.")
