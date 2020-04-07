@@ -360,15 +360,18 @@ def solve_puzzle(puzzle):
         possible_values = [(len(v), k) for k, v in values.items() if len(v) > 1]
         if len(possible_values) == 0:  # Contradiction, invalid solution
             return None
-        n, pos = (min([(len(v), k) for k, v in values.items() if len(v) > 1]))
+        n, pos = (min(possible_values))
 
         # Sort possible values for the position by the number of positions possible in peers.
-        # Further increases the likelihood of making the write choice.
+        # Further increases the likelihood of making the right choice.
         # Adds ~0.01s to difficult puzzles but guarantees a fast solution for even the toughest of puzzles.
         def num_peer_possibilities(poss_val):
-            return len([(cell, v) for cell, v in output_grid.items() if cell in peers[pos] and len(v) > 1 and poss_val in v])
+            return len([
+                0 for cell, v in values.items()
+                if cell in peers[pos] and len(v) > 1 and poss_val in v
+            ])
 
-        possible_values = ''.join(sorted(output_grid[pos], key=num_peer_possibilities))
+        possible_values = ''.join(sorted(values[pos], key=num_peer_possibilities))
 
         # Attempt all choices from our minimum choice positions.
         # It is important to run all possibilities, otherwise we hit a dead end.
