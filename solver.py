@@ -387,17 +387,4 @@ def solve_puzzle(puzzle):
     return guess_solution(output_grid)
 
 
-def load_grids(f_name):
-    """Generator loading grids from a file with a format that has the grid after a title line starting with 'Grid'."""
-    new_grid = ''
-    with open(f_name, 'r') as f:
-        for line in f:
-            if line.startswith('Grid'):
-                if new_grid != '':
-                    yield new_grid
-                    new_grid = ''
-                continue
-            new_grid += line
-    yield new_grid
-
 

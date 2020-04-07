@@ -61,12 +61,14 @@ class SudokuSolver(unittest.TestCase):
         """Euler problem 96."""
         total = 0
         total_time = 0
-        for grid in solver.load_grids(os.path.join(PUZZLE_DIR, 'p096_sudoku.txt')):
-            start = time.time()
-            solved = solver.solve(grid)
-            total_time += time.time() - start
-            top_left = int(''.join([x for k, x in solved.items() if k in ['A1', 'A2', 'A3']]))
-            total += top_left
+        with open(os.path.join(PUZZLE_DIR, 'p096_sudoku.txt'), 'r') as f:
+            for line in f.readlines():
+                if len(line.strip()) == 81:
+                    start = time.time()
+                    solved = solver.solve(line.strip())
+                    total_time += time.time() - start
+                    top_left = int(''.join([x for k, x in solved.items() if k in ['A1', 'A2', 'A3']]))
+                    total += top_left
         print('Average (Easy): %s' % (total_time / 50))
         self.assertEqual(total, 24702)
 
@@ -74,7 +76,7 @@ class SudokuSolver(unittest.TestCase):
         """List of 95 difficult puzzles from http://magictour.free.fr."""
         total_time = 0
         with open(os.path.join(PUZZLE_DIR, '95_hard_sudoku.txt'), 'r') as f:
-            for line in f:
+            for line in f.readlines():
                 if len(line.strip()) == 81:
                     start = time.time()
                     self.assertEqual(solver.validate_sudoku(solver.solve(line.strip())), True)
