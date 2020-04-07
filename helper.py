@@ -420,3 +420,17 @@ def solve_from_video(source=0, save=None):
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
+
+
+def benchmark_from_file(file_path):
+    i = 0
+
+    with open(file_path, 'r') as f:
+        for line in f.readlines():
+            line = line.strip()
+            if len(line) == 81:
+                i += 1
+                start = time.time()
+                solution = solver.solve(line)
+                elapsed = time.time() - start
+                yield i, solution, elapsed

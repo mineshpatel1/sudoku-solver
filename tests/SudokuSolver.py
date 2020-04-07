@@ -1,10 +1,10 @@
 import unittest
 import os
+
+import helper
 import solver
-import time
 
 PUZZLE_DIR = os.path.join('..', 'data', 'puzzles')
-IMAGE_DIR = os.path.join('..', 'data', 'images', 'grid', 'all')
 
 
 class SudokuSolver(unittest.TestCase):
@@ -57,46 +57,6 @@ class SudokuSolver(unittest.TestCase):
         puzzle3 = '.....6....59.....82....8....45........3........6..3.54...325..6..................'
         self.assertTrue(solver.validate_sudoku(solver.solve(puzzle3)))
 
-    def test_euler_50(self):
-        """Euler problem 96."""
-        total = 0
-        total_time = 0
-        with open(os.path.join(PUZZLE_DIR, 'p096_sudoku.txt'), 'r') as f:
-            for line in f.readlines():
-                if len(line.strip()) == 81:
-                    start = time.time()
-                    solved = solver.solve(line.strip())
-                    total_time += time.time() - start
-                    top_left = int(''.join([x for k, x in solved.items() if k in ['A1', 'A2', 'A3']]))
-                    total += top_left
-        print('Average (Easy): %s' % (total_time / 50))
-        self.assertEqual(total, 24702)
-
-    def test_95_hard_puzzles(self):
-        """List of 95 difficult puzzles from http://magictour.free.fr."""
-        total_time = 0
-        with open(os.path.join(PUZZLE_DIR, '95_hard_sudoku.txt'), 'r') as f:
-            for line in f.readlines():
-                if len(line.strip()) == 81:
-                    start = time.time()
-                    self.assertEqual(solver.validate_sudoku(solver.solve(line.strip())), True)
-                    total_time += (time.time() - start)
-        print('Average (Hard): %s' % (total_time / 95))
-
-    def test_imageset(self):
-        """Puzzles from the archive of images in the project."""
-        total_time = 0
-        n = 0
-        for f in [f for f in os.listdir(IMAGE_DIR) if f.split('.')[1] == 'dat']:
-            with open(os.path.join(IMAGE_DIR, f)) as puzzle_file:
-                puzzle = puzzle_file.read()
-            start = time.time()
-            solved = solver.solve(puzzle)
-            total_time += time.time() - start
-            n += 1
-            self.assertTrue(solver.validate_sudoku(solved))
-        print('Average (Archive): %s' % (total_time / n))
-
     def test_difficult(self):
         """Difficult puzzles for algorithms"""
         puzzles = []
@@ -146,6 +106,18 @@ class SudokuSolver(unittest.TestCase):
 
         for puzzle in puzzles:
             self.assertTrue(solver.validate_sudoku(solver.solve(puzzle)))
+
+    def test_benchmark(self):
+        """Collection of all puzzles collected in this project."""
+        total_time = 0
+        n = 0
+        for i, solution, elapsed in helper.benchmark_from_file(os.path.join(PUZZLE_DIR, 'benchmark.txt')):
+            self.assertTrue(solver.validate_sudoku(solution))
+            n = i
+            total_time += elapsed
+
+        print(f"Total Benchmark time: {total_time}s")
+        print(f"Average Benchmark time: {1000 * (total_time / n)}ms")
 
 
 def suite():
