@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 opencv-python = "*"
 tensorflow = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.8"
