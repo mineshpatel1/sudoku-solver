@@ -4,9 +4,9 @@ import numpy as np
 
 from configparser import ConfigParser
 
-import solver
-import computer_vision.helper as cv
-from neural_net.DigitRecogniser import DigitRecogniser
+import sudoku_solver.solver as solver
+import sudoku_solver.computer_vision.helper as cv
+from sudoku_solver.neural_net.DigitRecogniser import DigitRecogniser
 
 
 def classification_mode():

@@ -1,4 +1,4 @@
-from Sudoku import Sudoku
+from sudoku_solver.Sudoku import Sudoku
 
 
 def main():

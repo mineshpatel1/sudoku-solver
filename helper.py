@@ -5,12 +5,12 @@ import pickle
 import numpy as np
 from shutil import copyfile
 
-import solver
-import computer_vision.helper as cv
-import neural_net.digits as nn
-from neural_net.Dataset import Dataset
-from Sudoku import classification_mode
-from Sudoku import Sudoku
+import sudoku_solver.solver
+import sudoku_solver.computer_vision.helper as cv
+import sudoku_solver.neural_net.digits as nn
+from sudoku_solver.neural_net.Dataset import Dataset
+from sudoku_solver.Sudoku import classification_mode
+from sudoku_solver.Sudoku import Sudoku
 
 # Static variables, mostly file locations
 DIGITS = '0123456789'
