@@ -10,3 +10,5 @@ data/images/grid/train
 scratchpad.py
 *.pyc
 .idea/
+/dist/
+/mineshpatel1_sudoku_solver.egg-info/

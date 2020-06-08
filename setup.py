@@ -11,7 +11,7 @@ def package_files(directory):
             paths.append(os.path.join('..', path, filename))
     return paths
 
-extra_files = package_files('sudoku_solver')
+extra_files = package_files('sudoku_solver/data')
 
 
 setuptools.setup(
