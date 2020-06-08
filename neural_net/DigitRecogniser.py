@@ -1,8 +1,10 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 
 import neural_net.digits as nn
 import neural_net.digits_simple as simple_nn
+
+tf.disable_v2_behavior()
 
 
 def prepare_images(test_images, normalise=True, flatten=True):
