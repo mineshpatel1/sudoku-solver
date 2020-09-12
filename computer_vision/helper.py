@@ -207,7 +207,7 @@ def find_largest_polygon(img, n=4, threshold=0.01):
     Returns:
         cv2.Contour: The contour that encloses the largest area, optionally filtered based on approximated number of sides.
     """
-    _, contours, hier = cv2.findContours(img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)  # Find contours
+    contours, hier = cv2.findContours(img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)  # Find contours
     contours = sorted(contours, key=cv2.contourArea, reverse=True)  # Sort by area
 
     if n > 0:  # Get the first contour that has the desired number of sides
@@ -232,7 +232,7 @@ def find_four_corners_inner(img):
     Returns:
         np.array: Array of contours that are immediate children of the largest contour.
     """
-    _, contours, hier = cv2.findContours(img.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)  # Find contours
+    contours, hier = cv2.findContours(img.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)  # Find contours
     largest_i, largest_area = max(enumerate([cv2.contourArea(c) for c in contours]), key=operator.itemgetter(1))
 
     def find_children(idx):

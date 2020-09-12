@@ -75,7 +75,7 @@ def pre_process_image(img, skip_dilate=False):
 
     # Dilate the image to increase the size of the grid lines. Should increase reliability in finding the grid
     if not skip_dilate:
-        kernel = np.array([[0., 1., 0.], [1., 1., 1.], [0., 1., 0.]])
+        kernel = np.array([[0., 1., 0.], [1., 1., 1.], [0., 1., 0.]]).astype('uint8')
         proc = cv2.dilate(proc, kernel)
     return proc
 
